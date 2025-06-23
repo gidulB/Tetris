@@ -1,0 +1,29 @@
+# Visual Studio 관련
+.vs/
+*.user
+*.suo
+*.vcxproj.user
+
+# 빌드 파일 (Visual Studio)
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# 디버그 및 실행 파일
+x64/Debug/
+Snake3D/x64/Debug/
+*.exe
+*.ilk
+*.pdb
+*.log
+*.tlog/
+*.obj
+*.idb
+*.recipe
+*.applocal.log
+
+# OS 임시 파일
+.DS_Store
+Thumbs.db
