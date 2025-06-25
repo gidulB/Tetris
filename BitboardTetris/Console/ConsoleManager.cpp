@@ -7,9 +7,15 @@ ConsoleManager::ConsoleManager()
 	HideCursor();
 }
 
-void ConsoleManager::gotoxy(int x, int y)
+ConsoleManager* ConsoleManager::GetInstance()
 {
-	COORD pos{ (SHORT)x, (SHORT)y };
+	static ConsoleManager instance; 
+	return &instance;
+}
+
+void ConsoleManager::gotoxy(int X, int Y)
+{
+	COORD pos{ (SHORT)X, (SHORT)Y };
 	SetConsoleCursorPosition(hConsole, pos);
 }
 
@@ -21,7 +27,7 @@ void ConsoleManager::HideCursor()
 	SetConsoleCursorInfo(hConsole, &CursorInfo);
 }
 
-void ConsoleManager::SleepFrame(int milliseconds)
+void ConsoleManager::SleepFrame(int Milliseconds)
 {
 	//@TODO if need it
 }
@@ -31,11 +37,11 @@ void ConsoleManager::SwapBuffer()
 	//@TODO if need it
 }
 
-void ConsoleManager::PrintText(int x, int y, const std::string& text, WORD color)
+void ConsoleManager::PrintText(int X, int Y, const std::string& Text, WORD Color)
 {
-	gotoxy(x, y);
-	SetTextColor(color);
-	std::cout << text;
+	gotoxy(X, Y);
+	SetTextColor(Color);
+	std::cout << Text;
 	std::cin.get();
 }
 
@@ -53,30 +59,30 @@ void ConsoleManager::Clear()
 	SetConsoleCursorPosition(hConsole, topLeft);
 }
 
-void ConsoleManager::ClearArea(int x, int y, int width, int height)
+void ConsoleManager::ClearArea(int X, int Y, int Width, int Height)
 {
-	COORD startPos = { (SHORT)x, (SHORT)y };
+	COORD startPos = { (SHORT)X, (SHORT)Y };
 	CONSOLE_SCREEN_BUFFER_INFO csbi;
 	DWORD written;
 
 	GetConsoleScreenBufferInfo(hConsole, &csbi);
 
-	for (int row = 0; row < height; ++row)
+	for (int row = 0; row < Height; ++row)
 	{
-		COORD pos = { (SHORT)x, (SHORT)(y + row) };
-		FillConsoleOutputCharacter(hConsole, ' ', width, pos, &written);
-		FillConsoleOutputAttribute(hConsole, csbi.wAttributes, width, pos, &written);
+		COORD pos = { (SHORT)X, (SHORT)(Y + row) };
+		FillConsoleOutputCharacter(hConsole, ' ', Width, pos, &written);
+		FillConsoleOutputAttribute(hConsole, csbi.wAttributes, Width, pos, &written);
 	}
 
 	SetConsoleCursorPosition(hConsole, startPos);
 }
 
-void ConsoleManager::SetConsoleSize(int width, int height)
+void ConsoleManager::SetConsoleSize(int Width, int Height)
 {
-	COORD bufferSize = { (SHORT)width, (SHORT)height };
+	COORD bufferSize = { (SHORT)Width, (SHORT)Height };
 	SetConsoleScreenBufferSize(hConsole, bufferSize);
 
-	SMALL_RECT windowSize = { 0, 0, (SHORT)(width - 1), (SHORT)(height - 1) };
+	SMALL_RECT windowSize = { 0, 0, (SHORT)(Width - 1), (SHORT)(Height - 1) };
 	SetConsoleWindowInfo(hConsole, TRUE, &windowSize);
 }
 

@@ -5,19 +5,26 @@
 class ConsoleManager
 {
 public:
+	static ConsoleManager* GetInstance();
+
+	ConsoleManager(const ConsoleManager&) = delete;
+	ConsoleManager& operator=(const ConsoleManager&) = delete;
+
+private:
 	ConsoleManager();
 
-	void gotoxy(int x, int y);
+public:
+	void gotoxy(int X, int Y);
 	void HideCursor();
-	void SleepFrame(int milliseconds); // Manage Timer/Frame 
+	void SleepFrame(int Milliseconds); // Manage Timer/Frame 
 	void SwapBuffer(); // if I Extend double Buffer, I'll Use it
-	void PrintText(int x, int y, const std::string& text, WORD color = 7);
+	void PrintText(int X, int Y, const std::string& Text, WORD Color);
 	void Clear();
-	void ClearArea(int x, int y, int width, int height); // Delete Testris Block?
+	void ClearArea(int X, int Y, int Width, int Height); // Delete Testris Block?
 
 public:
-	void SetConsoleSize(int width, int height);
-	void SetTextColor(WORD color);
+	void SetConsoleSize(int Width, int Height);
+	void SetTextColor(WORD Color);
 
 	HANDLE Gethandle() { return hConsole; }
 
