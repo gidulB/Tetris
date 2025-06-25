@@ -24,12 +24,18 @@
     <ClCompile Include="Input\InputManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Logic\Block\BlockGenerator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Console\ConsoleManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Input\InputManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Logic\Block\BlockGenerator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
