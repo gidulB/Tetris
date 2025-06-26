@@ -4,6 +4,13 @@
 ConsoleManager::ConsoleManager()
 {
 	hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+	if (hConsole == nullptr || hConsole == INVALID_HANDLE_VALUE)
+	{
+		std::cerr << "ÄÜ¼Ö ÇÚµé È¹µæ ½ÇÆÐ!" << std::endl;
+		exit(1);
+	}
+
 	HideCursor();
 }
 
@@ -29,7 +36,7 @@ void ConsoleManager::HideCursor()
 
 void ConsoleManager::SleepFrame(int Milliseconds)
 {
-	//@TODO if need it
+	Sleep(Milliseconds);
 }
 
 void ConsoleManager::SwapBuffer()
@@ -42,7 +49,6 @@ void ConsoleManager::PrintText(int X, int Y, const std::string& Text, WORD Color
 	gotoxy(X, Y);
 	SetTextColor(Color);
 	std::cout << Text;
-	std::cin.get();
 }
 
 void ConsoleManager::Clear()

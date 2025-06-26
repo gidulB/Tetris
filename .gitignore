@@ -1,29 +1,29 @@
-# Visual Studio 관련
+# Visual Studio
 .vs/
-*.user
-*.suo
 *.vcxproj.user
+*.VC.db
+*.VC.opendb
 
-# 빌드 파일 (Visual Studio)
-Binaries/
-Build/
-DerivedDataCache/
-Intermediate/
-Saved/
-
-# 디버그 및 실행 파일
+# Build output
+Debug/
+Release/
 x64/Debug/
-Snake3D/x64/Debug/
-*.exe
-*.ilk
-*.pdb
-*.log
-*.tlog/
+x64/Release/
 *.obj
+*.pdb
 *.idb
-*.recipe
-*.applocal.log
+*.ipch
+*.tlog
+*.log
+*.exe
+*.dll
 
-# OS 임시 파일
-.DS_Store
+# User-specific
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS-specific
 Thumbs.db
+Desktop.ini
