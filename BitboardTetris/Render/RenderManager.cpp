@@ -41,7 +41,7 @@ void RenderManager::DrawString(int X, int Y, const std::string& Str)
 {
 	if (Y < 0 || Y >= Height) return;
 
-	//@TODO 공백 수정 필요
+	//@TODO 
 
 	for (size_t i = 0; i < Str.size(); ++i)
 	{

@@ -86,13 +86,11 @@ std::vector<std::pair<int, int>> Block::GetBlockCells() const
 
 bool Block::CanMove(int dx, int dy, const std::vector<std::vector<int>>& Map) const
 {
-	// 바닥이거나, 상하좌우로 장애물이 있으면 false
 	return false;
 }
 
 bool Block::CanRotate(const std::vector<std::vector<int>>& Map) const
 {
-	// 바닥이거나, 상하좌우로 장애물이 있으면 false
 	return false;
 }
 
@@ -104,6 +102,4 @@ void Block::HardDrop(const std::vector<std::vector<int>>& Map)
 	int Height = Render->GetHeight();
 	int Width = Render->GetWidth();
 
-	// 인풋 받기
-	// 바닥이거나, 상하좌우로 장애물이 있으면 break
 }
