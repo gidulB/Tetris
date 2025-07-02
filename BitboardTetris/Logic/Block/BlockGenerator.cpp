@@ -1,49 +1,55 @@
-#include "BlockGenerator.h"
+﻿#include "BlockGenerator.h"
 #include "Block.h"
 
-int BlockGenerator::GenerateBlock(int blockType, int rotation)
+int BlockGenerator::GenerateBlock(int blockType, int rotation, int color, int shape, 
+	int size, int position, int orientation)
 {
-	return 0;
-}
+	int block = (blockType << 28) | (rotation << 24) | (color << 20) | (shape << 16) |
+		(size << 12) | (position << 8) | (orientation << 4);
 
-int BlockGenerator::GenerateBlock(int blockType, int rotation, int color, int shape, int size, int position, int orientation)
-{
-	return 0;
+	return block;
 }
 
 int BlockGenerator::GetBlockType(int block)
 {
-	return 0;
+	int blockType = (block & BLOCK_TYPE_MASK) >> 28;
+	return blockType;
 }
 
 int BlockGenerator::GetBlockRotation(int block)
 {
-	return 0;
+	int blockRotation = (block & BLOCK_ROTATION_MASK) >> 24;
+	return blockRotation;
 }
 
 int BlockGenerator::GetBlockColor(int block)
 {
-	return 0;
+	int blockColor = (block & BLOCK_COLOR_MASK) >> 20;
+	return blockColor;
 }
 
 int BlockGenerator::GetBlockShape(int block)
 {
-	return 0;
+	int blockShape = (block & BLOCK_SHAPE_MASK) >> 16;
+	return blockShape;
 }
 
 int BlockGenerator::GetBlockSize(int block)
 {
-	return 0;
+	int blockSize = (block & BLOCK_SIZE_MASK) >> 12;
+	return blockSize;
 }
 
 int BlockGenerator::GetBlockPosition(int block)
 {
-	return 0;
+	int blockPosition = (block & BLOCK_POSITION_MASK) >> 8;
+	return blockPosition;
 }
 
 int BlockGenerator::GetBlockOrientation(int block)
 {
-	return 0;
+	int blockOrientation = (block & BLOCK_ORIENTATION_MASK) >> 4;
+	return blockOrientation;
 }
 
 int BlockGenerator::GenerateBlockInternal(int blockType, int rotation, int color, int shape, int size, int position, int orientation)
@@ -53,7 +59,8 @@ int BlockGenerator::GenerateBlockInternal(int blockType, int rotation, int color
 
 int BlockGenerator::ExtractBlockProperty(int block, int propertyMask, int propertyShift)
 {
-	return 0;
+	static const int BlockProperty = (block & propertyMask) >> propertyShift;
+	return BlockProperty;
 }
 
 int BlockGenerator::CreateBlock(int blockType, int rotation, int color, int shape, int size, int position, int orientation)

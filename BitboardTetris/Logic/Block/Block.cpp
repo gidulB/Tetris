@@ -1,4 +1,4 @@
-#include "Block.h"
+﻿#include "Block.h"
 
 #include "Console/ConsoleManager.h"
 #include "Render/RenderManager.h"
@@ -11,25 +11,25 @@ Block::Block()
 	switch (eBlock)
 	{
 	case BlockType::I:
-		Render->DrawString(0, 4, "#");
+		//Render->DrawString(4, 0, "#");
 		break;
 	case BlockType::O:
-		Render->DrawString(2, 2, "#");
+		//Render->DrawString(2, 2, "#");
 		break;
 	case BlockType::T:
-		Render->DrawString(3, 4, "#");
+		//Render->DrawString(3, 4, "#");
 		break;
 	case BlockType::S:
-		Render->DrawString(4, 2, "#");
+		//Render->DrawString(4, 2, "#");
 		break;
 	case BlockType::Z:
-		Render->DrawString(2, 4, "#");
+		//Render->DrawString(2, 4, "#");
 		break;
 	case BlockType::J:
-		Render->DrawString(3, 2, "#");
+		//Render->DrawString(3, 2, "#");
 		break;
 	case BlockType::L:
-		Render->DrawString(2, 3, "#");
+		//Render->DrawString(2, 3, "#");
 		break;
 	default:
 		break;

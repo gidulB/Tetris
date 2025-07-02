@@ -1,9 +1,8 @@
-#pragma once
+﻿#pragma once
 
 class BlockGenerator
 {
 public:
-	static int GenerateBlock(int blockType, int rotation);
 	static int GenerateBlock(int blockType, int rotation, int color, int shape, int size, int position, int orientation);
 
 	static int GetBlockType(int block);
