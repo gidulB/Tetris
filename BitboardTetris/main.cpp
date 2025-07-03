@@ -89,7 +89,7 @@ const char BLOCK_TYPES[][4] =
 int g_nArrMap[MAP_HEIGHT][MAP_WIDTH] = { 0, };
 
 // Map Data (Backup Data)
-//int g_nArrMapBackup[MAP_HEIGHT][MAP_WIDTH] = { 0, };
+int g_nArrMapBackup[MAP_HEIGHT][MAP_WIDTH] = { 0, };
 
 const int BLOCKS[][BLOCK_WIDTH * BLOCK_HEIGHT] =
 {
@@ -162,7 +162,80 @@ void InitGame(bool bInitConsole = true)
     {
         int nMapSize = sizeof(int) * MAP_WIDTH * MAP_HEIGHT;
         memcpy_s(g_nArrMap, nMapSize, ORIGIN_MAP, nMapSize);
+        memcpy_s(g_nArrMapBackup, nMapSize, g_nArrMap, nMapSize);
     }
+}
+
+/**
+@brief		Funtion that get rotate block data
+@param		nBlockIdx		Block Index
+@param		eDir			Rotate Direction
+@return		Block
+*/
+int* GetRotateBlock(int nBlockIdx, CPlayer::eDirection eDir)
+{
+    // 이전 블럭의 데이터가 있다면 제거
+    if (g_pCurBlock != nullptr)
+    {
+        delete[] g_pCurBlock;
+        g_pCurBlock = nullptr;
+    }
+
+    // 새로운 블럭 할당
+    g_pCurBlock = new int[BLOCK_HEIGHT * BLOCK_WIDTH];
+    int nMemSize = sizeof(int) * BLOCK_HEIGHT * BLOCK_WIDTH;
+    memcpy_s(g_pCurBlock, nMemSize, BLOCKS[nBlockIdx], nMemSize);
+
+    // 블럭 회전
+    for (int nRot = 0; nRot < (int)eDir; ++nRot)
+    {
+        int nTemps[BLOCK_HEIGHT * BLOCK_WIDTH] = { 0, };
+
+        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+        {
+            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+            {
+                nTemps[(nX * BLOCK_WIDTH) + (BLOCK_HEIGHT - nY - 1)] = g_pCurBlock[(nY * BLOCK_HEIGHT) + nX];
+            }
+        }
+
+        memcpy_s(g_pCurBlock, nMemSize, nTemps, nMemSize);
+    }
+
+    return g_pCurBlock;
+}
+
+bool IsCollision(int* pBlock, const COORD& coordPlayer)
+{
+    int nCollision = 0;
+
+    for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+    {
+        for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+        {
+            // 벽 충돌 유무
+            nCollision = pBlock[(nY * BLOCK_HEIGHT) + nX] & (g_nArrMapBackup[coordPlayer.Y + nY][coordPlayer.X + nX] << 1);
+            // 다른 블럭과 충돌 유무
+            nCollision += pBlock[(nY * BLOCK_HEIGHT) + nX] & g_nArrMapBackup[coordPlayer.Y + nY][coordPlayer.X + nX];
+
+            // 벽 또는 블럭과 충돌 했다면 충돌로 판정
+            if (nCollision > 0) return true;
+        }
+    }
+
+    return false;
+}
+
+bool IsMoveAvailable(int nXAdder, int nYAdder)
+{
+    COORD coorNext = g_player.GetCursor();
+
+    coorNext.X += nXAdder;
+    coorNext.Y += nYAdder;
+
+    int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
+
+    return !IsCollision(pBlock, coorNext);
 }
 
 void InputKey()
@@ -177,33 +250,32 @@ void InputKey()
         {
         case eKeyCode::KEY_UP:
         {
-            // 블럭 바로 내리기에 사용
             break;
         }
         case eKeyCode::KEY_DOWN:
         {
-            // 아래로 1칸 이동 (Y좌표로 1증가)
-            g_player.AddPosition(0, 1);
+            if(IsMoveAvailable(0, 1))
+                g_player.AddPosition(0, 1);
             break;
         }
         case eKeyCode::KEY_LEFT:
         {
-            g_player.AddPosition(-1, 0);
+            if (IsMoveAvailable(-1, 0))
+                g_player.AddPosition(-1, 0);
             break;
         }
         case eKeyCode::KEY_RIGHT:
         {
-            g_player.AddPosition(1, 0);
+            if (IsMoveAvailable(1, 0))
+                g_player.AddPosition(1, 0);
             break;
         }
         case eKeyCode::KEY_SPACE:
         {
-            // 나중에 블럭 회전에 사용
             break;
         }
         case eKeyCode::KEY_R:
         {
-            // 나중에 초기화에 사용
             break;
         }
         default:
@@ -253,6 +325,7 @@ void Render(int nXOffset = 0, int nYOffset = 0)
             {
                 ++nBlockCount;
             }*/
+
         }
 
         if (nY > 0 && nY < MAP_HEIGHT - 1)
@@ -285,45 +358,6 @@ void BufferFlip()
     SetConsoleActiveScreenBuffer(g_console.hBuffer[g_console.nCurBuffer]);
     // 화면 버퍼 인덱스를 교체
     g_console.nCurBuffer = g_console.nCurBuffer ? 0 : 1;
-}
-
-/**
-@brief		Funtion that get rotate block data
-@param		nBlockIdx		Block Index
-@param		eDir			Rotate Direction
-@return		Block
-*/
-int* GetRotateBlock(int nBlockIdx, CPlayer::eDirection eDir)
-{
-    // 이전 블럭의 데이터가 있다면 제거
-    if (g_pCurBlock != nullptr)
-    {
-        delete[] g_pCurBlock;
-        g_pCurBlock = nullptr;
-    }
-
-    // 새로운 블럭 할당
-    g_pCurBlock = new int[BLOCK_HEIGHT * BLOCK_WIDTH];
-    int nMemSize = sizeof(int) * BLOCK_HEIGHT * BLOCK_WIDTH;
-    memcpy_s(g_pCurBlock, nMemSize, BLOCKS[nBlockIdx], nMemSize);
-
-    // 블럭 회전
-    for (int nRot = 0; nRot < (int)eDir; ++nRot)
-    {
-        int nTemps[BLOCK_HEIGHT * BLOCK_WIDTH] = { 0, };
-
-        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-        {
-            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-            {
-                nTemps[(nX * BLOCK_WIDTH) + (BLOCK_HEIGHT - nY - 1)] = g_pCurBlock[(nY * BLOCK_HEIGHT) + nX];
-            }
-        }
-
-        memcpy_s(g_pCurBlock, nMemSize, nTemps, nMemSize);
-    }
-
-    return g_pCurBlock;
 }
 
 void DestroyGame()
