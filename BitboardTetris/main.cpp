@@ -231,7 +231,10 @@ void Render(int nXOffset = 0, int nYOffset = 0)
 
     for (int nY = 0; nY < MAP_HEIGHT; ++nY)
     {
+        // 한 라인에 그려지는 블록의 개수
+        int nBlockCount = 0;
         nXAdd = 0;
+
         for (int nX = 0; nX < MAP_WIDTH; ++nX)
         {
             coord.X = nXAdd + nXOffset;
@@ -240,13 +243,27 @@ void Render(int nXOffset = 0, int nYOffset = 0)
             SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
             WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[g_nArrMap[nY][nX]], sizeof(BLOCK_TYPES[g_nArrMap[nY][nX]]), &dw, NULL);
 
-            nXAdd += 1;
+            ++nXAdd;
 
-            // 폰트: 굴림체일 경우
             /*if (g_nArrMap[nY][nX] == 0)
             {
-                nXAdd += 1;
+                ++nXAdd;
+            }
+            else
+            {
+                ++nBlockCount;
             }*/
+        }
+
+        if (nY > 0 && nY < MAP_HEIGHT - 1)
+        {
+            int nStart = nXOffset + nBlockCount + (MAP_WIDTH - nBlockCount) * 2;
+            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+            {
+                coord.X = nStart + nX;
+                SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+                WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[0], sizeof(BLOCK_TYPES[0]), &dw, NULL);
+            }
         }
     }
 }
