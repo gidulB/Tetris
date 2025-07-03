@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <Windows.h>
 #include <conio.h>
+#include "Player.h"
 
 using namespace std;
 
@@ -19,8 +20,8 @@ constexpr int MAP_WIDTH = 12;
 constexpr int MAP_HEIGHT = 22;
 constexpr int BLOCK_WIDTH = 4;
 constexpr int BLOCK_HEIGHT = 4;
-//constexpr int START_POS_X = 4;
-//constexpr int START_POS_Y = 1;
+constexpr int START_POS_X = 4;
+constexpr int START_POS_Y = 1;
 
 enum eKeyCode
 {
@@ -84,6 +85,12 @@ const char BLOCK_TYPES[][4] =
     "□"    // 블록
 };
 
+// Map Data
+int g_nArrMap[MAP_HEIGHT][MAP_WIDTH] = { 0, };
+
+// Map Data (Backup Data)
+//int g_nArrMapBackup[MAP_HEIGHT][MAP_WIDTH] = { 0, };
+
 const int BLOCKS[][BLOCK_WIDTH * BLOCK_HEIGHT] =
 {
     { 0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0 },	// I
@@ -95,13 +102,30 @@ const int BLOCKS[][BLOCK_WIDTH * BLOCK_HEIGHT] =
     { 0,0,0,0,0,0,2,0,0,2,2,0,0,2,0,0 },	// Z
 };
 
+// Player Data
+CPlayer g_player;
+// Previous Player Data
+CPlayer g_prevPlayerData;
+// Block Pointer
 int* g_pCurBlock = nullptr;
-int g_nArrMap[MAP_HEIGHT][MAP_WIDTH] = { 0, };
-
+// Console Data
 stConsole g_console;
 
 void InitGame(bool bInitConsole = true)
 {
+    // 플레이어(블럭) 데이터 초기화
+    {
+        // START_POS_X = 4
+        // START_POS_Y = 1
+        g_player.SetPosition(START_POS_X, START_POS_Y);
+        g_player.SetXPositionRange(-1, MAP_WIDTH);
+        g_player.SetYPositionRange(0, MAP_WIDTH);
+        g_player.SetBlock(1);
+        g_player.SetDirection(CPlayer::eDirection::Dir0);
+        g_player.SetGameScore(0);
+        g_player.SetGameOver(false);
+    }
+    
     // Initialize Console Data
     if (bInitConsole)
     {
@@ -132,8 +156,8 @@ void InitGame(bool bInitConsole = true)
         SetConsoleCursorInfo(g_console.hConsole, &consoleCursor);          
     }
 
+    // 맵 데이터 초기화
     {
-        // 맵 할당
         int nMapSize = sizeof(int) * MAP_WIDTH * MAP_HEIGHT;
         memcpy_s(g_nArrMap, nMapSize, ORIGIN_MAP, nMapSize);
     }
@@ -150,40 +174,38 @@ void InputKey()
         switch (nKey)
         {
         case eKeyCode::KEY_UP:
-            break;
-        case eKeyCode::KEY_DOWN:
-            break;
-        case eKeyCode::KEY_LEFT:
-            break;
-        case eKeyCode::KEY_RIGHT:
-            break;
-        case eKeyCode::KEY_SPACE:
-            break;
-        case eKeyCode::KEY_R:
-            break;
-        default:
+        {
+            // 블럭 바로 내리기에 사용
             break;
         }
-    }
-}
-
-/**
-@brief        Function that puts blocks into a map to match the player's position.
-@param
-@return
-*/
-void CalcPlayer()
-{
-    COORD playerCursor = { 5, 3 };
-    
-    for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-    {
-        for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+        case eKeyCode::KEY_DOWN:
         {
-            if (BLOCKS[1][nY * BLOCK_HEIGHT + nX])
-            {
-                g_nArrMap[playerCursor.Y + nY][playerCursor.X + nX] = BLOCKS[1][nY * BLOCK_HEIGHT + nX];
-            }
+            // 아래로 1칸 이동 (Y좌표로 1증가)
+            g_player.AddPosition(0, 1);
+            break;
+        }
+        case eKeyCode::KEY_LEFT:
+        {
+            g_player.AddPosition(-1, 0);
+            break;
+        }
+        case eKeyCode::KEY_RIGHT:
+        {
+            g_player.AddPosition(1, 0);
+            break;
+        }
+        case eKeyCode::KEY_SPACE:
+        {
+            // 나중에 블럭 회전에 사용
+            break;
+        }
+        case eKeyCode::KEY_R:
+        {
+            // 나중에 초기화에 사용
+            break;
+        }
+        default:
+            break;
         }
     }
 }
@@ -246,8 +268,53 @@ void BufferFlip()
     g_console.nCurBuffer = g_console.nCurBuffer ? 0 : 1;
 }
 
+/**
+@brief		Funtion that get rotate block data
+@param		nBlockIdx		Block Index
+@param		eDir			Rotate Direction
+@return		Block
+*/
+int* GetRotateBlock(int nBlockIdx, CPlayer::eDirection eDir)
+{
+    // 이전 블럭의 데이터가 있다면 제거
+    if (g_pCurBlock != nullptr)
+    {
+        delete[] g_pCurBlock;
+        g_pCurBlock = nullptr;
+    }
+
+    // 새로운 블럭 할당
+    g_pCurBlock = new int[BLOCK_HEIGHT * BLOCK_WIDTH];
+    int nMemSize = sizeof(int) * BLOCK_HEIGHT * BLOCK_WIDTH;
+    memcpy_s(g_pCurBlock, nMemSize, BLOCKS[nBlockIdx], nMemSize);
+
+    // 블럭 회전
+    for (int nRot = 0; nRot < (int)eDir; ++nRot)
+    {
+        int nTemps[BLOCK_HEIGHT * BLOCK_WIDTH] = { 0, };
+
+        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+        {
+            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+            {
+                nTemps[(nX * BLOCK_WIDTH) + (BLOCK_HEIGHT - nY - 1)] = g_pCurBlock[(nY * BLOCK_HEIGHT) + nX];
+            }
+        }
+
+        memcpy_s(g_pCurBlock, nMemSize, nTemps, nMemSize);
+    }
+
+    return g_pCurBlock;
+}
+
 void DestroyGame()
 {
+    if (g_pCurBlock != nullptr)
+    {
+        delete[] g_pCurBlock;
+        g_pCurBlock = nullptr;
+    }
+
     if (g_console.hBuffer[0] != nullptr)
     {
         CloseHandle(g_console.hBuffer[0]);
@@ -259,13 +326,37 @@ void DestroyGame()
     }
 }
 
+/**
+@brief        Function that puts blocks into a map to match the player's position.
+@param
+@return
+*/
+void CalcPlayer()
+{
+    // 현재 플레이어(블럭) 위치를 받아온다.
+    COORD playerCursor = g_player.GetCursor();
+
+    // 현재 블럭의 방향에 따른 모양을 받아온다.
+    int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
+    for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+    {
+        for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+        {
+            if (pBlock[(nY * BLOCK_HEIGHT) + nX])
+            {
+                g_nArrMap[playerCursor.Y + nY][playerCursor.X + nX] = pBlock[nY * BLOCK_HEIGHT + nX];
+            }
+        }
+    }
+}
+
 int main()
 {
     InitGame();         // 게임 초기화 (게임 설정 및 콘솔 설정)
 
     while (true)
     {       
-        //InputKey();     // 키 입력
+        InputKey();     // 키 입력
         CalcPlayer();   // 플레이어(도형)의 위치 계산
 
         //CheckBottom();  // 플레이어가 바닥 또는 도형에 닿았는지 확인
