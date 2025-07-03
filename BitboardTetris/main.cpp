@@ -1,5 +1,8 @@
 ﻿#include <iostream>
 #include <Windows.h>
+#include <conio.h>
+
+using namespace std;
 
 //1. 상단에서 블럭이 하단으로 내려온다.
 //2. 도형은 총 7개가 있다.
@@ -7,6 +10,40 @@
 //4. 바닥 또는 도형에 닿으면 다음 도형으로 넘어간다.
 //5. 도형을 맞추어 일자가 되면 제거되고 나머지 블럭은 아래로 내려온다.
 //출처: https://eskeptor.tistory.com/191 [Hello World:티스토리]
+
+
+//constexpr int WIN_WIDTH = 70;
+//constexpr int WIN_HEIGHT = 60;
+
+//constexpr int MAP_WIDTH = 12;
+//constexpr int MAP_HEIGHT = 22;
+constexpr int BLOCK_WIDTH = 4;
+constexpr int BLOCK_HEIGHT = 4;
+//constexpr int START_POS_X = 4;
+//constexpr int START_POS_Y = 1;
+
+enum eKeyCode
+{
+    KEY_UP = 72,
+    KEY_DOWN = 80,
+    KEY_LEFT = 75,
+    KEY_RIGHT = 77,
+    KEY_SPACE = 32,
+    KEY_R = 114,
+};
+
+const int BLOCKS[][BLOCK_WIDTH * BLOCK_HEIGHT] =
+{
+    { 0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0 },	// I
+    { 0,0,0,0,0,0,2,0,0,0,2,0,0,2,2,0 },	// J
+    { 0,0,0,0,0,2,0,0,0,2,0,0,0,2,2,0 },	// L
+    { 0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,0 },	// O
+    { 0,0,0,0,0,2,0,0,0,2,2,0,0,0,2,0 },	// S
+    { 0,0,0,0,0,2,0,0,2,2,2,0,0,0,0,0 },	// T
+    { 0,0,0,0,0,0,2,0,0,2,2,0,0,2,0,0 },	// Z
+};
+
+int* g_pCurBlock = nullptr;
 
 struct stRect
 {
@@ -63,6 +100,30 @@ void InitGame(bool bInitConsole = true)
 
 void InputKey()
 {
+    int nKey = 0;
+
+    if (_kbhit() > 0)
+    {
+        nKey = _getch();
+
+        switch (nKey)
+        {
+        case eKeyCode::KEY_UP:
+            break;
+        case eKeyCode::KEY_DOWN:
+            break;
+        case eKeyCode::KEY_LEFT:
+            break;
+        case eKeyCode::KEY_RIGHT:
+            break;
+        case eKeyCode::KEY_SPACE:
+            break;
+        case eKeyCode::KEY_R:
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 void CalcPlayer()
@@ -116,19 +177,42 @@ int main()
 {
     InitGame();         // 게임 초기화 (게임 설정 및 콘솔 설정)
 
-    char chBuf[256] = { 0, };
+    /*char chBuf[256] = { 0, };
     COORD coord{ 0,0 };
-    DWORD dw = 0;
+    DWORD dw = 0;*/
+
+    int nCurBlock[BLOCK_WIDTH * BLOCK_HEIGHT] = { 0, };
+    int nMemSize = sizeof(int) * BLOCK_HEIGHT * BLOCK_WIDTH;
+    memcpy_s(nCurBlock, nMemSize, BLOCKS[1], nMemSize);
+
+    printf("");
+
+    for (int nRot = 0; nRot < 1; ++nRot)
+    {
+        int nTemps[BLOCK_WIDTH * BLOCK_HEIGHT] = { 0, };
+
+        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+        {
+            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+            {
+                nTemps[(nX * BLOCK_WIDTH) + (BLOCK_HEIGHT - nY - 1)] = nCurBlock[(nY * BLOCK_HEIGHT) + nX];
+            }
+        }
+
+        memcpy_s(nCurBlock, nMemSize, nTemps, nMemSize);
+    }
+
+    printf("");
 
     while (true)
     {
         // Flickering Test 출력
-        memset(chBuf, 0, sizeof(chBuf));
+        /*memset(chBuf, 0, sizeof(chBuf));
         int nLen = sprintf_s(chBuf, sizeof(chBuf), "Flickering Test");
         SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
-        WriteFile(g_console.hBuffer[g_console.nCurBuffer], chBuf, nLen, &dw, NULL);
+        WriteFile(g_console.hBuffer[g_console.nCurBuffer], chBuf, nLen, &dw, NULL);*/
 
-        //InputKey();     // 키 입력
+        InputKey();     // 키 입력
         //CalcPlayer();   // 플레이어(도형)의 위치 계산
 
         //CheckBottom();  // 플레이어가 바닥 또는 도형에 닿았는지 확인
