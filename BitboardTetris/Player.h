@@ -1,8 +1,16 @@
-﻿#pragma once
+﻿/**
+@brief			Player class
+@author			Eskeptor
+@date			2023-01-17
+@version		0.0.3
+*/
+
+#pragma once
 
 class CPlayer
 {
 public:
+	// Block direction
 	enum eDirection
 	{
 		Dir0 = 0,
@@ -10,24 +18,37 @@ public:
 		Dir180,
 		Dir270,
 
-		DirMax,
+		DirMax
 	};
 
 private:
+	// Current X Position
 	int m_nXPos;
+	// Minimum X Position
 	int m_nMinXPos;
+	// Maximum X Position
 	int m_nMaxXPos;
+	// Current Y Position
 	int m_nYPos;
+	// Minimum Y Position
 	int m_nMinYPos;
+	// Maximum Y Position
 	int m_nMaxYPos;
+	// Current Block Index
 	int m_nCurBlock;
+	// Current Block Direction
 	eDirection m_eDirection;
+	// Game Score
 	int m_nGameScore;
+	// Game Over
 	bool m_bIsGameOver;
 
 public:
-	CPlayer(int m_nXPos = 0, int m_nYPos = 0, int m_nCurBlock = 0, eDirection m_eDirection = eDirection::Dir0)
-		: m_nXPos(m_nXPos), m_nYPos(m_nYPos), m_nCurBlock(m_nCurBlock), m_eDirection(m_eDirection)
+	/**
+	@brief		Initialize
+	*/
+	CPlayer(int nXPos = 0, int nYPos = 0, int nCurBlock = 0, eDirection eDir = eDirection::Dir0)
+		: m_nXPos(nXPos), m_nYPos(nYPos), m_nCurBlock(nCurBlock), m_eDirection(eDir)
 		, m_nMinXPos(0), m_nMinYPos(0), m_nMaxXPos(20), m_nMaxYPos(20)
 		, m_nGameScore(0), m_bIsGameOver(false)
 	{
@@ -107,13 +128,9 @@ public:
 	inline void SetNextDirection()
 	{
 		if (m_eDirection + 1 >= eDirection::DirMax)
-		{
 			m_eDirection = eDirection::Dir0;
-		}
 		else
-		{
 			m_eDirection = (eDirection)(m_eDirection + 1);
-		}
 	}
 
 	/**
@@ -154,8 +171,8 @@ public:
 	*/
 	inline void AddPosition(int nXAdder, int nYAdder)
 	{
-		m_nXPos = m_nXPos + nXAdder >= m_nMinXPos ? (m_nXPos + nXAdder <= m_nMaxXPos ? m_nXPos + nXAdder : m_nMaxXPos) : m_nMinXPos;
-		m_nYPos = m_nYPos + nYAdder >= m_nMinYPos ? (m_nYPos + nYAdder <= m_nMaxYPos ? m_nYPos + nYAdder : m_nMaxYPos) : m_nMinXPos;
+		m_nXPos = (m_nXPos + nXAdder >= m_nMinXPos) ? (m_nXPos + nXAdder <= m_nMaxXPos ? m_nXPos + nXAdder : m_nMaxXPos) : m_nMinXPos;
+		m_nYPos = (m_nYPos + nYAdder >= m_nMinYPos) ? (m_nYPos + nYAdder <= m_nMaxYPos ? m_nYPos + nYAdder : m_nMaxYPos) : m_nMinYPos;
 	}
 
 	/**
@@ -215,7 +232,7 @@ public:
 	*/
 	inline eDirection GetNextDirection() const
 	{
-		m_eDirection + 1 >= eDirection::DirMax ? eDirection::Dir0 : (eDirection)(m_eDirection + 1);
+		return (m_eDirection + 1 >= eDirection::DirMax) ? eDirection::Dir0 : (eDirection)(m_eDirection + 1);
 	}
 
 	/**
@@ -225,7 +242,7 @@ public:
 	*/
 	inline COORD GetCursor() const
 	{
-		COORD cursor{ (short)m_nXPos, (short)m_nYPos };
+		COORD cursor{ (SHORT)m_nXPos, (SHORT)m_nYPos };
 		return cursor;
 	}
 
@@ -252,15 +269,13 @@ public:
 	CPlayer& operator=(CPlayer& player)
 	{
 		m_nXPos = player.m_nXPos;
-		m_nMinXPos = player.m_nMinXPos;
-		m_nMaxXPos = player.m_nMaxXPos;
 		m_nYPos = player.m_nYPos;
-		m_nMinYPos = player.m_nMinYPos;
-		m_nMaxYPos = player.m_nMaxYPos;
 		m_nCurBlock = player.m_nCurBlock;
 		m_eDirection = player.m_eDirection;
-		m_nGameScore = player.m_nGameScore;
-		m_bIsGameOver = player.m_bIsGameOver;
+		m_nMinXPos = player.m_nMinXPos;
+		m_nMinYPos = player.m_nMinYPos;
+		m_nMaxXPos = player.m_nMaxXPos;
+		m_nMaxYPos = player.m_nMaxYPos;
 
 		return *this;
 	}

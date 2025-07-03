@@ -1,99 +1,109 @@
-﻿#include <iostream>
+﻿/**
+@brief			Main
+@author			Eskeptor
+@date			2023-01-28
+@version		0.0.4
+*/
+
+#include <iostream>
+#include <random>
 #include <Windows.h>
 #include <conio.h>
-#include <random> 
-#include <ctime> 
 #include "Player.h"
 
 using namespace std;
 
-//1. 상단에서 블럭이 하단으로 내려온다.
-//2. 도형은 총 7개가 있다.
-//3. 특정 키를 눌렀을 때 도형이 회전한다.(4가지 방향으로 회전)
-//4. 바닥 또는 도형에 닿으면 다음 도형으로 넘어간다.
-//5. 도형을 맞추어 일자가 되면 제거되고 나머지 블럭은 아래로 내려온다.
-//출처: https://eskeptor.tistory.com/191 [Hello World:티스토리]
+constexpr int WIN_WIDTH = 70;
+constexpr int WIN_HEIGHT = 60;
 
-
-//constexpr int WIN_WIDTH = 70;
-//constexpr int WIN_HEIGHT = 60;
-
+// Map Width (constexpr)
 constexpr int MAP_WIDTH = 12;
+// Map Height (constexpr)
 constexpr int MAP_HEIGHT = 22;
+// Block Width (constexpr)
 constexpr int BLOCK_WIDTH = 4;
+// Block Height (constexpr)
 constexpr int BLOCK_HEIGHT = 4;
+// Player Start X Position 
 constexpr int START_POS_X = 4;
+// Player Start Y Position
 constexpr int START_POS_Y = 1;
 
+// Key Code
 enum eKeyCode
 {
-    KEY_UP = 72,
-    KEY_DOWN = 80,
-    KEY_LEFT = 75,
-    KEY_RIGHT = 77,
-    KEY_SPACE = 32,
-    KEY_R = 114,
+	KEY_UP = 72,
+	KEY_DOWN = 80,
+	KEY_LEFT = 75,
+	KEY_RIGHT = 77,
+	KEY_SPACE = 32,
+	KEY_R = 114,
 };
 
+// Rectangle Structure
 struct stRect
 {
-    int nWidth;
-    int nHeight;
+	int nWidth;
+	int nHeight;
 };
 
+// Console Structure
 struct stConsole
 {
-    HANDLE hConsole;
-    stRect rtConsole;
-    HANDLE hBuffer[2];
-    int nCurBuffer;
+	// Console Handler
+	HANDLE hConsole;
+	// Console Rect Data
+	stRect rtConsole;
+	// Console Buffer Handler
+	HANDLE hBuffer[2];
+	// Current Console Buffer Index
+	int nCurBuffer;
 
-    random_device rdDevice;
-    mt19937 rdGen;
-    uniform_int_distribution<int> rdBlockDist;
-    uniform_int_distribution<int> rdDirDist;
+	// Random Seed
+	random_device rdDevice;
+	// Random Generation
+	mt19937 rdGen;
+	// Random Distribution (Block)
+	uniform_int_distribution<int> rdBlockDist;
+	// Random Distribution (Direction)
+	uniform_int_distribution<int> rdDirDist;
 
-    clock_t timeStart; // 마지막 입력지점의 시간
+	// Clock
+	clock_t timeStart;
 
-    stConsole()
-        : hConsole(nullptr), hBuffer{ nullptr, }, nCurBuffer(0)
-        , rdGen(rdDevice()), rdBlockDist(0, 6), rdDirDist(CPlayer::eDirection::Dir0, CPlayer::eDirection::Dir270)
-        , timeStart(clock())
-    {
-    }
+	stConsole()
+		: hConsole(nullptr), hBuffer{ nullptr, }, nCurBuffer(0)
+		, rdGen(rdDevice()), rdBlockDist(0, 6), rdDirDist(CPlayer::eDirection::Dir0, CPlayer::eDirection::Dir270)
+		, timeStart(clock())
+	{
+	}
 };
 
+// Origin Map
 const int ORIGIN_MAP[MAP_HEIGHT][MAP_WIDTH] =
 {
-    {1,1,1,1,1,1,1,1,1,1,1,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,0,0,0,0,0,0,0,0,0,0,1,},
-    {1,1,1,1,1,1,1,1,1,1,1,1,},
-};
-
-const char BLOCK_TYPES[][4] =
-{
-    "  ",  // 빈 공간
-    "▣",  // 프레임
-    "□"    // 블록
+	{1,1,1,1,1,1,1,1,1,1,1,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,0,0,0,0,0,0,0,0,0,0,1,},
+	{1,1,1,1,1,1,1,1,1,1,1,1,},
 };
 
 // Map Data
@@ -102,15 +112,24 @@ int g_nArrMap[MAP_HEIGHT][MAP_WIDTH] = { 0, };
 // Map Data (Backup Data)
 int g_nArrMapBackup[MAP_HEIGHT][MAP_WIDTH] = { 0, };
 
+// Block Data
 const int BLOCKS[][BLOCK_WIDTH * BLOCK_HEIGHT] =
 {
-    { 0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0 },	// I
-    { 0,0,0,0,0,0,2,0,0,0,2,0,0,2,2,0 },	// J
-    { 0,0,0,0,0,2,0,0,0,2,0,0,0,2,2,0 },	// L
-    { 0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,0 },	// O
-    { 0,0,0,0,0,2,0,0,0,2,2,0,0,0,2,0 },	// S
-    { 0,0,0,0,0,2,0,0,2,2,2,0,0,0,0,0 },	// T
-    { 0,0,0,0,0,0,2,0,0,2,2,0,0,2,0,0 },	// Z
+	{ 0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0 },	// I
+	{ 0,0,0,0,0,0,2,0,0,0,2,0,0,2,2,0 },	// J
+	{ 0,0,0,0,0,2,0,0,0,2,0,0,0,2,2,0 },	// L
+	{ 0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,0 },	// O
+	{ 0,0,0,0,0,2,0,0,0,2,2,0,0,0,2,0 },	// S
+	{ 0,0,0,0,0,2,0,0,2,2,2,0,0,0,0,0 },	// T
+	{ 0,0,0,0,0,0,2,0,0,2,2,0,0,2,0,0 },	// Z
+};
+
+// Block Type
+const char BLOCK_TYPES[][4] =
+{
+	"  ",
+	"▣",
+	"□"
 };
 
 // Player Data
@@ -122,73 +141,30 @@ int* g_pCurBlock = nullptr;
 // Console Data
 stConsole g_console;
 
-// 블럭 랜덤 생성
-int RandomBlock()
+/**
+@brief		Function that screen clear
+@param
+@return
+*/
+void ClearScreen()
 {
-    return g_console.rdBlockDist(g_console.rdGen);
+	COORD pos{ 0, };
+	DWORD dwWritten = 0;
+	unsigned size = g_console.rtConsole.nWidth * g_console.rtConsole.nHeight;
+
+	FillConsoleOutputCharacter(g_console.hConsole, ' ', size, pos, &dwWritten);
+	SetConsoleCursorPosition(g_console.hConsole, pos);
 }
 
-// 블럭의 방향 랜덤 생성
-int RamdomDirection()
+/**
+@brief		Function that Flip screen buffer
+@param
+@return
+*/
+void BufferFlip()
 {
-    return g_console.rdDirDist(g_console.rdGen);
-}
-
-void InitGame(bool bInitConsole = true)
-{
-    // 플레이어(블럭) 데이터 초기화
-    {
-        g_player.SetPosition(START_POS_X, START_POS_Y);
-        g_player.SetXPositionRange(-1, MAP_WIDTH);
-        g_player.SetYPositionRange(0, MAP_WIDTH);
-
-        // 블록 랜덤 생성
-        g_player.SetBlock(RandomBlock());
-        // 블록의 방향 랜덤 생성
-        g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
-
-        g_player.SetGameScore(0);
-        g_player.SetGameOver(false);
-
-        g_prevPlayerData = g_player;
-    }
-    
-    // Initialize Console Data
-    if (bInitConsole)
-    {
-        g_console.hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-        g_console.nCurBuffer = 0;
-
-        // 콘솔 관련 설정
-        CONSOLE_CURSOR_INFO consoleCursor{ 1, FALSE }; // 콘솔 커서 깜빡이 제거
-        CONSOLE_SCREEN_BUFFER_INFO consoleInfo{ 0, };
-        GetConsoleScreenBufferInfo(g_console.hConsole, &consoleInfo);
-        consoleInfo.dwSize.X = 40;  // 콘솔의 Width
-        consoleInfo.dwSize.Y = 30;  // 콘솔의 Height
-
-        // 콘솔의 크기를 다시 계산 (나중에 그림 그릴 때 다시 사용)
-        g_console.rtConsole.nWidth = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left;
-        g_console.rtConsole.nHeight = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top;
-
-        // 콘솔의 첫번째 화면 버퍼 생성
-        g_console.hBuffer[0] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-        SetConsoleScreenBufferSize(g_console.hBuffer[0], consoleInfo.dwSize);   // 화면 버퍼 크기 설정
-        SetConsoleWindowInfo(g_console.hConsole, TRUE, &consoleInfo.srWindow);  // 콘솔 설정
-        SetConsoleCursorInfo(g_console.hConsole, &consoleCursor);               // 콘솔의 커서 설정 
-
-        // 콘솔의 두번째 화면 버퍼 생성
-        g_console.hBuffer[1] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-        SetConsoleScreenBufferSize(g_console.hBuffer[0], consoleInfo.dwSize);   
-        SetConsoleWindowInfo(g_console.hConsole, TRUE, &consoleInfo.srWindow);  
-        SetConsoleCursorInfo(g_console.hConsole, &consoleCursor);          
-    }
-
-    // 맵 데이터 초기화
-    {
-        int nMapSize = sizeof(int) * MAP_WIDTH * MAP_HEIGHT;
-        memcpy_s(g_nArrMap, nMapSize, ORIGIN_MAP, nMapSize);
-        memcpy_s(g_nArrMapBackup, nMapSize, g_nArrMap, nMapSize);
-    }
+	SetConsoleActiveScreenBuffer(g_console.hBuffer[g_console.nCurBuffer]);
+	g_console.nCurBuffer = g_console.nCurBuffer ? 0 : 1;
 }
 
 /**
@@ -199,313 +175,498 @@ void InitGame(bool bInitConsole = true)
 */
 int* GetRotateBlock(int nBlockIdx, CPlayer::eDirection eDir)
 {
-    // 이전 블럭의 데이터가 있다면 제거
-    if (g_pCurBlock != nullptr)
-    {
-        delete[] g_pCurBlock;
-        g_pCurBlock = nullptr;
-    }
+	if (g_pCurBlock != nullptr)
+	{
+		delete[] g_pCurBlock;
+		g_pCurBlock = nullptr;
+	}
 
-    // 새로운 블럭 할당
-    g_pCurBlock = new int[BLOCK_HEIGHT * BLOCK_WIDTH];
-    int nMemSize = sizeof(int) * BLOCK_HEIGHT * BLOCK_WIDTH;
-    memcpy_s(g_pCurBlock, nMemSize, BLOCKS[nBlockIdx], nMemSize);
+	g_pCurBlock = new int[BLOCK_HEIGHT * BLOCK_WIDTH];
+	int nMemSize = sizeof(int) * BLOCK_HEIGHT * BLOCK_WIDTH;
+	memcpy_s(g_pCurBlock, nMemSize, BLOCKS[nBlockIdx], nMemSize);
 
-    // 블럭 회전
-    for (int nRot = 0; nRot < (int)eDir; ++nRot)
-    {
-        int nTemps[BLOCK_HEIGHT * BLOCK_WIDTH] = { 0, };
+	for (int nRot = 0; nRot < (int)eDir; ++nRot)
+	{
+		int nTemps[BLOCK_HEIGHT * BLOCK_WIDTH] = { 0, };
 
-        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-        {
-            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-            {
-                nTemps[(nX * BLOCK_WIDTH) + (BLOCK_HEIGHT - nY - 1)] = g_pCurBlock[(nY * BLOCK_HEIGHT) + nX];
-            }
-        }
+		for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+		{
+			for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+			{
+				nTemps[(nX * BLOCK_WIDTH) + (BLOCK_HEIGHT - nY - 1)] = g_pCurBlock[(nY * BLOCK_HEIGHT) + nX];
+			}
+		}
 
-        memcpy_s(g_pCurBlock, nMemSize, nTemps, nMemSize);
-    }
+		memcpy_s(g_pCurBlock, nMemSize, nTemps, nMemSize);
+	}
 
-    return g_pCurBlock;
+	return g_pCurBlock;
 }
 
+/**
+@brief		Function that get random block
+@param
+@return		Random block index
+*/
+int RandomBlock()
+{
+	return g_console.rdBlockDist(g_console.rdGen);
+}
+
+/**
+@brief		Function that get random direction
+@param
+@return		Random direction index
+*/
+int RamdomDirection()
+{
+	return g_console.rdDirDist(g_console.rdGen);
+}
+
+/**
+@brief		Function to determine if there is a collision
+@param		pBlock		Block
+@param		coordPlayer	Player coord
+@return		true: Collision, false: Not collision
+*/
 bool IsCollision(int* pBlock, const COORD& coordPlayer)
 {
-    int nCollision = 0;
+	int nColision = 0;
 
-    for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-    {
-        for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-        {
-            // 벽 충돌 유무
-            nCollision = pBlock[(nY * BLOCK_HEIGHT) + nX] & (g_nArrMapBackup[coordPlayer.Y + nY][coordPlayer.X + nX] << 1);
-            // 다른 블럭과 충돌 유무
-            nCollision += pBlock[(nY * BLOCK_HEIGHT) + nX] & g_nArrMapBackup[coordPlayer.Y + nY][coordPlayer.X + nX];
+	for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+	{
+		for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+		{
+			nColision = pBlock[(nY * BLOCK_HEIGHT) + nX] & (g_nArrMapBackup[coordPlayer.Y + nY][coordPlayer.X + nX] << 1);
+			nColision += pBlock[(nY * BLOCK_HEIGHT) + nX] & g_nArrMapBackup[coordPlayer.Y + nY][coordPlayer.X + nX];
 
-            // 벽 또는 블럭과 충돌 했다면 충돌로 판정
-            if (nCollision > 0) return true;
-        }
-    }
+			if (nColision > 0)
+				return true;
+		}
+	}
 
-    return false;
+	return false;
 }
 
+/**
+@brief		Function to check if it can move horizontally
+@param		nXAdder		X position adder
+@param		nYAdder		Y position adder
+@return		true: Available, false: Unavailable
+*/
 bool IsMoveAvailable(int nXAdder, int nYAdder)
 {
-    COORD coorNext = g_player.GetCursor();
+	COORD coorNext = g_player.GetCursor();
+	coorNext.X += nXAdder;
+	coorNext.Y += nYAdder;
+	int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
 
-    coorNext.X += nXAdder;
-    coorNext.Y += nYAdder;
-
-    int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
-
-    return !IsCollision(pBlock, coorNext);
+	return !IsCollision(pBlock, coorNext);
 }
 
+/**
+@brief		Function to check if it can rotate
+@param
+@return		true: Available, false: Unavailable
+*/
 bool IsRotateAvailable()
 {
-    int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
+	int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetNextDirection());
 
-    return !IsCollision(pBlock, g_player.GetCursor());
+	return !IsCollision(pBlock, g_player.GetCursor());
 }
 
-void InputKey()
+/**
+@brief		Function that initialize game data & Settings
+@param
+@return
+*/
+void InitGame(bool bInitConsole = true)
 {
-    int nKey = 0;
+	// Initialize Player Data
+	{
+		g_player.SetPosition(START_POS_X, START_POS_Y);
+		g_player.SetXPositionRange(-1, MAP_WIDTH);
+		g_player.SetYPositionRange(0, MAP_HEIGHT);
+		g_player.SetBlock(RandomBlock());
+		g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
+		g_player.SetGameScore(0);
+		g_player.SetGameOver(false);
 
-    if (_kbhit() > 0)
-    {
-        nKey = _getch();
+		g_prevPlayerData = g_player;
+	}
 
-        switch (nKey)
-        {
-        case eKeyCode::KEY_UP:
-        {
-            break;
-        }
-        case eKeyCode::KEY_DOWN:
-        {
-            if (IsMoveAvailable(0, 1))
-            {
-                g_player.AddPosition(0, 1);
-                g_console.timeStart = clock();
-                break;
-            }
-        }
-        case eKeyCode::KEY_LEFT:
-        {
-            if (IsMoveAvailable(-1, 0))
-                g_player.AddPosition(-1, 0);
-            break;
-        }
-        case eKeyCode::KEY_RIGHT:
-        {
-            if (IsMoveAvailable(1, 0))
-                g_player.AddPosition(1, 0);
-            break;
-        }
-        case eKeyCode::KEY_SPACE:
-        {
-            if (IsRotateAvailable)
-            {
-                g_player.SetNextDirection();
-            }
-            break;
-        }
-        case eKeyCode::KEY_R:
-        {
-            break;
-        }
-        default:
-            break;
-        }
-    }
+	// Initialize Console Data
+	if (bInitConsole)
+	{
+		g_console.hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+		g_console.nCurBuffer = 0;
+
+		CONSOLE_CURSOR_INFO consoleCursor{ 1, FALSE };
+		CONSOLE_SCREEN_BUFFER_INFO consoleInfo{ 0, };
+		GetConsoleScreenBufferInfo(g_console.hConsole, &consoleInfo);
+		consoleInfo.dwSize.X = 40;
+		consoleInfo.dwSize.Y = 30;
+		//consoleInfo.srWindow.Right = consoleInfo.dwSize.X;
+		//consoleInfo.srWindow.Bottom = consoleInfo.dwSize.Y;
+
+		g_console.rtConsole.nWidth = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left;
+		g_console.rtConsole.nHeight = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top;
+
+		g_console.hBuffer[0] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+		SetConsoleScreenBufferSize(g_console.hBuffer[0], consoleInfo.dwSize);
+		SetConsoleWindowInfo(g_console.hBuffer[0], TRUE, &consoleInfo.srWindow);
+		SetConsoleCursorInfo(g_console.hBuffer[0], &consoleCursor);
+
+		g_console.hBuffer[1] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+		SetConsoleScreenBufferSize(g_console.hBuffer[1], consoleInfo.dwSize);
+		SetConsoleWindowInfo(g_console.hBuffer[1], TRUE, &consoleInfo.srWindow);
+		SetConsoleCursorInfo(g_console.hBuffer[1], &consoleCursor);
+	}
+
+	// Map Backup
+	{
+		int nMapSize = sizeof(int) * MAP_WIDTH * MAP_HEIGHT;
+		memcpy_s(g_nArrMap, nMapSize, ORIGIN_MAP, nMapSize);
+		memcpy_s(g_nArrMapBackup, nMapSize, g_nArrMap, nMapSize);
+	}
 }
 
-void CheckBottom()
+/**
+@brief		Function to erase game data.
+@param
+@return
+*/
+void DestroyGame()
 {
-    // 마지막 입력 시간에서 현재 시간을 뺌 = 진행된 시간(ms)
-    clock_t ctTimeDiff = clock() - g_console.timeStart;
+	if (g_pCurBlock != nullptr)
+	{
+		delete[] g_pCurBlock;
+		g_pCurBlock = nullptr;
+	}
 
-    // 1000ms가 지나지 않았다면 바로 return
-    if (ctTimeDiff < 1000) return;
+	if (g_console.hBuffer[0] != nullptr)
+	{
+		CloseHandle(g_console.hBuffer[0]);
+	}
 
-    // 1000ms 가 지났으니 현재 시간을 다시 저장
-    g_console.timeStart = clock();
-
-    if (IsMoveAvailable(0, 1))
-    {
-        // 아래로 한 칸 이동
-        g_player.AddPosition(0, 1);
-        return;
-    }
-
-    memcpy_s(g_nArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, g_nArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
-
-    g_player.SetPosition(START_POS_X, START_POS_Y);
-    // 블럭 랜덤 생성
-    g_player.SetBlock(RandomBlock());
-    g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
-
-    g_prevPlayerData = g_player;
+	if (g_console.hBuffer[1] != nullptr)
+	{
+		CloseHandle(g_console.hBuffer[1]);
+	}
 }
 
 /**
 @brief		Rendering function
-@param		nXOffset	X Offset (그림을 그릴 때 왼쪽에서부터)
-@param		nYOffset	Y Offset (그림을 그릴 때 위쪽에서부터)
+@param		nXOffset	X Offset (Render Position)
+@param		nYOffset	Y Offset (Render Position)
 @return
 */
 void Render(int nXOffset = 0, int nYOffset = 0)
 {
-    COORD coord = { 0, };
-    int nXAdd = 0;
-    DWORD dw = 0;
+	COORD coord{ 0, };
+	int nXAdd = 0;
+	DWORD dw = 0;
+	char chBuf[256] = { 0, };
 
-    for (int nY = 0; nY < MAP_HEIGHT; ++nY)
-    {
-        // 한 라인에 그려지는 블록의 개수
-        int nBlockCount = 0;
-        nXAdd = 0;
+	// Map & Player(Figure) Draw
+	{
+		for (int nY = 0; nY < MAP_HEIGHT; ++nY)
+		{
+			int nBlockCount = 0;
+			nXAdd = 0;
 
-        for (int nX = 0; nX < MAP_WIDTH; ++nX)
-        {
-            coord.X = nXAdd + nXOffset;
-            coord.Y = nY + nYOffset;
+			for (int nX = 0; nX < MAP_WIDTH; ++nX)
+			{
+				coord.X = nXAdd + nXOffset;
+				coord.Y = nY + nYOffset;
 
-            SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
-            WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[g_nArrMap[nY][nX]], sizeof(BLOCK_TYPES[g_nArrMap[nY][nX]]), &dw, NULL);
+				SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+				WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[g_nArrMap[nY][nX]], sizeof(BLOCK_TYPES[g_nArrMap[nY][nX]]), &dw, NULL);
 
-            ++nXAdd;
+				++nXAdd;
 
-            /*if (g_nArrMap[nY][nX] == 0)
-            {
-                ++nXAdd;
-            }
-            else
-            {
-                ++nBlockCount;
-            }*/
+				/*if (g_nArrMap[nY][nX] == 0)
+					++nXAdd;
+				else
+					++nBlockCount;*/
+			}
 
-        }
+			// 벗어난 부분 덧칠하기			
+			if (nY > 0 &&
+				nY < MAP_HEIGHT - 1)
+			{
+				int nStart = nXOffset + nBlockCount + (MAP_WIDTH - nBlockCount) * 2;
+				for (int nX = 0; nX < nBlockCount; ++nX)
+				{
+					coord.X = nStart + nX;
+					SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+					WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[0], sizeof(BLOCK_TYPES[0]), &dw, NULL);
+				}
+			}
+		}
+	}
 
-        if (nY > 0 && nY < MAP_HEIGHT - 1)
-        {
-            int nStart = nXOffset + nBlockCount + (MAP_WIDTH - nBlockCount) * 2;
-            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-            {
-                coord.X = nStart + nX;
-                SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
-                WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[0], sizeof(BLOCK_TYPES[0]), &dw, NULL);
-            }
-        }
-    }
-}
+	// Game Over
+	if (g_player.GetGameOver())
+	{
+		coord.X = 5 + nXOffset;
+		coord.Y = 10 + nYOffset;
+		memset(chBuf, 0, sizeof(chBuf));
+		int nLen = sprintf_s(chBuf, sizeof(chBuf), "Game Over");
+		SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+		WriteFile(g_console.hBuffer[g_console.nCurBuffer], chBuf, nLen, &dw, NULL);
+	}
 
-void ClearScreen()
-{
-    COORD pos{ 0, };
-    DWORD dwWritten = 0;
-    unsigned size = g_console.rtConsole.nWidth * g_console.rtConsole.nHeight;
+	// Player Real Position
+	{
+		//char chBuf[256] = { 0, };
+		//coord.X = 26;
+		//coord.Y = 4;
+		//int nLen = sprintf_s(chBuf, sizeof(chBuf), "X: %02d, Y: %02d", g_player.GetXPosition(), g_player.GetYPosition());
+		//SetConsoleCursorPosition(console.hBuffer[console.nCurBuffer], coord);
+		//WriteFile(console.hBuffer[console.nCurBuffer], chBuf, nLen, &dw, NULL);
+	}
 
-    // 콘솔 화면 전체를 띄어쓰기를 넣어 빈 화면처럼 만듭니다.
-    FillConsoleOutputCharacter(g_console.hConsole, ' ', size, pos, &dwWritten);
-    SetConsoleCursorPosition(g_console.hConsole, pos);
-}
-
-void BufferFlip()
-{
-    // 화면 버퍼 설정
-    SetConsoleActiveScreenBuffer(g_console.hBuffer[g_console.nCurBuffer]);
-    // 화면 버퍼 인덱스를 교체
-    g_console.nCurBuffer = g_console.nCurBuffer ? 0 : 1;
-}
-
-void DestroyGame()
-{
-    if (g_pCurBlock != nullptr)
-    {
-        delete[] g_pCurBlock;
-        g_pCurBlock = nullptr;
-    }
-
-    if (g_console.hBuffer[0] != nullptr)
-    {
-        CloseHandle(g_console.hBuffer[0]);
-    }
-
-    if(g_console.hBuffer[1] != nullptr)
-    {
-        CloseHandle(g_console.hBuffer[1]);
-    }
+	// Score
+	{
+		coord.X = 27 + nXOffset;
+		coord.Y = 0 + nYOffset;
+		memset(chBuf, 0, sizeof(chBuf));
+		int nLen = sprintf_s(chBuf, sizeof(chBuf), "Score: %6d", g_player.GetGameScore());
+		SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+		WriteFile(g_console.hBuffer[g_console.nCurBuffer], chBuf, nLen, &dw, NULL);
+	}
 }
 
 /**
-@brief        Function that puts blocks into a map to match the player's position.
+@brief		Function that puts blocks into a map to match the player's position.
 @param
 @return
 */
 void CalcPlayer()
 {
-    // 현재 플레이어(블럭) 위치를 받아온다.
-    COORD playerCursor = g_player.GetCursor();
+	COORD playerCursor = g_player.GetCursor();
 
-    // 이전 위치의 블럭 코드 제거
-    if (g_prevPlayerData != g_player)
-    {
-        int* pBlock = GetRotateBlock(g_prevPlayerData.GetBlock(), g_prevPlayerData.GetDirection());
-        COORD sprevCursor = g_prevPlayerData.GetCursor();
+	// 이전 위치의 블록 제거
+	if (g_prevPlayerData != g_player)
+	{
+		int* pBlock = GetRotateBlock(g_prevPlayerData.GetBlock(), g_prevPlayerData.GetDirection());
+		COORD sprevCursor = g_prevPlayerData.GetCursor();
 
-        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-        {
-            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-            {
-                // 이전 위치의 블럭이 위치한 좌표의 데이터를 지워줌
-                if (pBlock[(nY * BLOCK_HEIGHT) + nX] &&
-                    pBlock[(nY * BLOCK_HEIGHT) + nX] == g_nArrMap[sprevCursor.Y + nY][sprevCursor.X + nX])
-                {
-                    g_nArrMap[sprevCursor.Y + nY][sprevCursor.X + nX] = 0;
-                }
-            }
-        }
+		for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+		{
+			for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+			{
+				if (pBlock[(nY * BLOCK_HEIGHT) + nX] &&
+					pBlock[(nY * BLOCK_HEIGHT) + nX] == g_nArrMap[sprevCursor.Y + nY][sprevCursor.X + nX])
+					g_nArrMap[sprevCursor.Y + nY][sprevCursor.X + nX] = 0;
+			}
+		}
 
-        // 현재 플레이어(블럭)의 정보를 이전 정보에 기록
-        g_prevPlayerData = g_player;
-    }
+		g_prevPlayerData = g_player;
+	}
 
-    // 현재 블럭의 방향에 따른 모양을 받아온다.
-    int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
-    for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-    {
-        for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-        {
-            if (pBlock[(nY * BLOCK_HEIGHT) + nX])
-            {
-                g_nArrMap[playerCursor.Y + nY][playerCursor.X + nX] = pBlock[nY * BLOCK_HEIGHT + nX];
-            }
-        }
-    }
+	int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
+	for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+	{
+		for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+		{
+			if (pBlock[(nY * BLOCK_HEIGHT) + nX])
+				g_nArrMap[playerCursor.Y + nY][playerCursor.X + nX] = pBlock[(nY * BLOCK_HEIGHT) + nX];
+		}
+	}
+
+	// 새로운 블럭이 놓아졌을 때 더 이상 움직일 수 없는지 확인 후 게임오버 정함
+	if (g_player.GetXPosition() == START_POS_X &&
+		g_player.GetYPosition() == START_POS_Y)
+		g_player.SetGameOver(!IsMoveAvailable(0, 1));
 }
 
-int main()
+/**
+@brief		Check Fill Line
+@param
+@return		true: Fill and Line Clear, false: Not fill
+*/
+bool CheckFillLine()
 {
-    InitGame();         // 게임 초기화 (게임 설정 및 콘솔 설정)
+	COORD curPos = g_player.GetCursor();
+	bool bFill = true;
+	int nSize = 0;
+	bool bLineCleared = false;
 
-    while (true)
-    {       
-        InputKey();     // 키 입력
-        CalcPlayer();   // 플레이어(도형)의 위치 계산
+	for (int nY = curPos.Y; nY < curPos.Y + 4; ++nY)
+	{
+		bFill = true;
 
-        CheckBottom();  // 플레이어가 바닥 또는 도형에 닿았는지 확인
-        Render(3, 1);       // 플레이어 및 도형 그리기
+		for (int nX = 1; nX < MAP_WIDTH; ++nX)
+		{
+			if (g_nArrMapBackup[nY][nX] == 0)
+			{
+				bFill = false;
+				break;
+			}
+		}
 
-        ClearScreen();  // 화면 클리어
-        BufferFlip();   // 화면 버퍼 전환 (Double Buffer) 
-        Sleep(1);
-    }
-    
-    DestroyGame();      // 게임 제거 (메모리 해제)
+		if (bFill &&
+			nY < MAP_HEIGHT - 1)
+		{
+			nSize = sizeof(int) * MAP_WIDTH * (nY - 1);
+			memcpy_s(g_nArrMapBackup[2], nSize, g_nArrMapBackup[1], nSize);
+			bLineCleared = true;
+		}
+	}
 
-    return 0;
+	return bLineCleared;
+}
+
+/**
+@brief		Function to determine if the bottom has been reached
+@param
+@return
+*/
+void CheckBottom()
+{
+	double dTimeDiff = clock() - g_console.timeStart;
+
+	if (dTimeDiff < 1000)
+		return;
+
+	if (g_player.GetGameOver())
+		return;
+
+	g_console.timeStart = clock();
+
+	if (IsMoveAvailable(0, 1))
+	{
+		// Y Move
+		g_player.AddPosition(0, 1);
+		return;
+	}
+
+	memcpy_s(g_nArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, g_nArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
+
+	// Check Fill Line
+	if (CheckFillLine())
+	{
+		g_player.AddGameScore(1);
+		memcpy_s(g_nArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, g_nArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
+	}
+
+	g_player.SetPosition(START_POS_X, START_POS_Y);
+	g_player.SetBlock(RandomBlock());
+	g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
+
+	g_prevPlayerData = g_player;
+}
+
+/**
+@brief		Function that detects input keys.
+@param
+@return
+*/
+void InputKey()
+{
+	int nKey = 0;
+
+	if (_kbhit() > 0)
+	{
+		nKey = _getch();
+
+		switch (nKey)
+		{
+		case eKeyCode::KEY_UP:
+		{
+			if (g_player.GetGameOver())
+				return;
+
+			while (IsMoveAvailable(0, 1))
+			{
+				g_player.AddPosition(0, 1);
+				Sleep(0);
+			}
+			g_console.timeStart = clock() - 1000;
+			break;
+		}
+		case eKeyCode::KEY_DOWN:
+		{
+			if (g_player.GetGameOver())
+				return;
+
+			if (IsMoveAvailable(0, 1))
+			{
+				g_player.AddPosition(0, 1);
+				g_console.timeStart = clock();
+			}
+			break;
+		}
+		case eKeyCode::KEY_LEFT:
+		{
+			if (g_player.GetGameOver())
+				return;
+
+			if (IsMoveAvailable(-1, 0))
+			{
+				g_player.AddPosition(-1, 0);
+			}
+			break;
+		}
+		case eKeyCode::KEY_RIGHT:
+		{
+			if (g_player.GetGameOver())
+				return;
+
+			if (IsMoveAvailable(1, 0))
+			{
+				g_player.AddPosition(1, 0);
+			}
+			break;
+		}
+		case eKeyCode::KEY_SPACE:
+		{
+			if (g_player.GetGameOver())
+				return;
+
+			if (IsRotateAvailable())
+			{
+				g_player.SetNextDirection();
+			}
+			break;
+		}
+		case eKeyCode::KEY_R:
+		{
+			InitGame(false);
+
+			break;
+		}
+		}
+	}
+}
+
+/**
+@brief		Main Function
+@param
+@return
+*/
+int main(void)
+{
+	InitGame();
+
+	while (true)
+	{
+		InputKey();
+		CalcPlayer();
+
+		CheckBottom();
+		Render(3, 1);
+
+		ClearScreen();
+		BufferFlip();
+		Sleep(1);
+	}
+
+	DestroyGame();
+
+	return 0;
 }
