@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <Windows.h>
 #include <conio.h>
+#include <random> 
 #include "Player.h"
 
 using namespace std;
@@ -46,8 +47,14 @@ struct stConsole
     HANDLE hBuffer[2];
     int nCurBuffer;
 
+    random_device rdDevice;
+    mt19937 rdGen;
+    uniform_int_distribution<int> rdBlockDist;
+    uniform_int_distribution<int> rdDirDist;
+
     stConsole()
         : hConsole(nullptr), hBuffer{ nullptr, }, nCurBuffer(0)
+        , rdGen(rdDevice()), rdBlockDist(0, 6), rdDirDist(CPlayer::eDirection::Dir0, CPlayer::eDirection::Dir270)
     {
     }
 };
@@ -111,17 +118,31 @@ int* g_pCurBlock = nullptr;
 // Console Data
 stConsole g_console;
 
+// 블럭 랜덤 생성
+int RandomBlock()
+{
+    return g_console.rdBlockDist(g_console.rdGen);
+}
+
+// 블럭의 방향 랜덤 생성
+int RamdomDirection()
+{
+    return g_console.rdDirDist(g_console.rdGen);
+}
+
 void InitGame(bool bInitConsole = true)
 {
     // 플레이어(블럭) 데이터 초기화
     {
-        // START_POS_X = 4
-        // START_POS_Y = 1
         g_player.SetPosition(START_POS_X, START_POS_Y);
         g_player.SetXPositionRange(-1, MAP_WIDTH);
         g_player.SetYPositionRange(0, MAP_WIDTH);
-        g_player.SetBlock(1);
-        g_player.SetDirection(CPlayer::eDirection::Dir0);
+
+        // 블록 랜덤 생성
+        g_player.SetBlock(RandomBlock());
+        // 블록의 방향 랜덤 생성
+        g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
+
         g_player.SetGameScore(0);
         g_player.SetGameOver(false);
 
@@ -286,7 +307,16 @@ void InputKey()
 
 void CheckBottom()
 {
+    if (IsMoveAvailable(0, 1)) return;
 
+    memcpy_s(g_nArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, g_nArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
+
+    g_player.SetPosition(START_POS_X, START_POS_Y);
+    // 블럭 랜덤 생성
+    g_player.SetBlock(RandomBlock());
+    g_player.SetDirection((CPlayer::eDirection)RamdomDirection());
+
+    g_prevPlayerData = g_player;
 }
 
 /**
@@ -435,7 +465,7 @@ int main()
         InputKey();     // 키 입력
         CalcPlayer();   // 플레이어(도형)의 위치 계산
 
-        //CheckBottom();  // 플레이어가 바닥 또는 도형에 닿았는지 확인
+        CheckBottom();  // 플레이어가 바닥 또는 도형에 닿았는지 확인
         Render(3, 1);       // 플레이어 및 도형 그리기
 
         ClearScreen();  // 화면 클리어
