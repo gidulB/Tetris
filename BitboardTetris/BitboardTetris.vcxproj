@@ -127,19 +127,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Console\ConsoleManager.cpp" />
-    <ClCompile Include="Input\InputManager.cpp" />
-    <ClCompile Include="Logic\Block\Block.cpp" />
-    <ClCompile Include="Logic\Block\BlockGenerator.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Render\RenderManager.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Console\ConsoleManager.h" />
-    <ClInclude Include="Input\InputManager.h" />
-    <ClInclude Include="Logic\Block\Block.h" />
-    <ClInclude Include="Logic\Block\BlockGenerator.h" />
-    <ClInclude Include="Render\RenderManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

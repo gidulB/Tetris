@@ -1,30 +1,145 @@
-#include <iostream>
+﻿#include <iostream>
+#include <Windows.h>
 
-#include "Console/ConsoleManager.h"
-#include "Render/RenderManager.h"
+//1. 상단에서 블럭이 하단으로 내려온다.
+//2. 도형은 총 7개가 있다.
+//3. 특정 키를 눌렀을 때 도형이 회전한다.(4가지 방향으로 회전)
+//4. 바닥 또는 도형에 닿으면 다음 도형으로 넘어간다.
+//5. 도형을 맞추어 일자가 되면 제거되고 나머지 블럭은 아래로 내려온다.
+//출처: https://eskeptor.tistory.com/191 [Hello World:티스토리]
+
+struct stRect
+{
+    int nWidth;
+    int nHeight;
+};
+
+struct stConsole
+{
+    HANDLE hConsole;
+    stRect rtConsole;
+    HANDLE hBuffer[2];
+    int nCurBuffer;
+
+    stConsole()
+        : hConsole(nullptr), hBuffer{ nullptr, }, nCurBuffer(0)
+    { }
+};
+
+stConsole g_console;
+
+void InitGame(bool bInitConsole = true)
+{
+    // Initialize Console Data
+    if (bInitConsole)
+    {
+        g_console.hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        g_console.nCurBuffer = 0;
+
+        // 콘솔 관련 설정
+        CONSOLE_CURSOR_INFO consoleCursor{ 1, FALSE }; // 콘솔 커서 깜빡이 제거
+        CONSOLE_SCREEN_BUFFER_INFO consoleInfo{ 0, };
+        GetConsoleScreenBufferInfo(g_console.hConsole, &consoleInfo);
+        consoleInfo.dwSize.X = 40;  // 콘솔의 Width
+        consoleInfo.dwSize.Y = 30;  // 콘솔의 Height
+
+        // 콘솔의 크기를 다시 계산 (나중에 그림 그릴 때 다시 사용)
+        g_console.rtConsole.nWidth = consoleInfo.srWindow.Right - consoleInfo.srWindow.Left;
+        g_console.rtConsole.nHeight = consoleInfo.srWindow.Bottom - consoleInfo.srWindow.Top;
+
+        // 콘솔의 첫번째 화면 버퍼 생성
+        g_console.hBuffer[0] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+        SetConsoleScreenBufferSize(g_console.hBuffer[0], consoleInfo.dwSize);   // 화면 버퍼 크기 설정
+        SetConsoleWindowInfo(g_console.hConsole, TRUE, &consoleInfo.srWindow);  // 콘솔 설정
+        SetConsoleCursorInfo(g_console.hConsole, &consoleCursor);               // 콘솔의 커서 설정 
+
+        // 콘솔의 두번째 화면 버퍼 생성
+        g_console.hBuffer[1] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+        SetConsoleScreenBufferSize(g_console.hBuffer[0], consoleInfo.dwSize);   
+        SetConsoleWindowInfo(g_console.hConsole, TRUE, &consoleInfo.srWindow);  
+        SetConsoleCursorInfo(g_console.hConsole, &consoleCursor);          
+    }
+}
+
+void InputKey()
+{
+}
+
+void CalcPlayer()
+{
+
+}
+
+void CheckBottom()
+{
+
+}
+
+void Render(int a, int b)
+{
+
+}
+
+void ClearScreen()
+{
+    COORD pos{ 0, };
+    DWORD dwWritten = 0;
+    unsigned size = g_console.rtConsole.nWidth * g_console.rtConsole.nHeight;
+
+    // 콘솔 화면 전체를 띄어쓰기를 넣어 빈 화면처럼 만듭니다.
+    FillConsoleOutputCharacter(g_console.hConsole, ' ', size, pos, &dwWritten);
+    SetConsoleCursorPosition(g_console.hConsole, pos);
+}
+
+void BufferFlip()
+{
+    // 화면 버퍼 설정
+    SetConsoleActiveScreenBuffer(g_console.hBuffer[g_console.nCurBuffer]);
+    // 화면 버퍼 인덱스를 교체
+    g_console.nCurBuffer = g_console.nCurBuffer ? 0 : 1;
+}
+
+void DestroyGame()
+{
+    if (g_console.hBuffer[0] != nullptr)
+    {
+        CloseHandle(g_console.hBuffer[0]);
+    }
+
+    if(g_console.hBuffer[1] != nullptr)
+    {
+        CloseHandle(g_console.hBuffer[1]);
+    }
+}
 
 int main()
 {
-    ConsoleManager* Console = ConsoleManager::GetInstance();
-    Console->SetConsoleSize(50, 20);
+    InitGame();         // 게임 초기화 (게임 설정 및 콘솔 설정)
 
-    RenderManager* Render = RenderManager::GetInstance();
+    char chBuf[256] = { 0, };
+    COORD coord{ 0,0 };
+    DWORD dw = 0;
 
     while (true)
     {
-        Render->ClearBuffer();
-        Render->DrawBorder();
+        // Flickering Test 출력
+        memset(chBuf, 0, sizeof(chBuf));
+        int nLen = sprintf_s(chBuf, sizeof(chBuf), "Flickering Test");
+        SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+        WriteFile(g_console.hBuffer[g_console.nCurBuffer], chBuf, nLen, &dw, NULL);
 
-        Render->DrawChar(10, 5, '#');
-        Render->DrawString(15, 7, "Help Me");
+        //InputKey();     // 키 입력
+        //CalcPlayer();   // 플레이어(도형)의 위치 계산
 
-        Render->Render();
+        //CheckBottom();  // 플레이어가 바닥 또는 도형에 닿았는지 확인
+        //Render(3, 1);       // 플레이어 및 도형 그리기
 
-        Console->SleepFrame(1000);
-
-        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) 
-            break;
+        ClearScreen();  // 화면 클리어
+        BufferFlip();   // 화면 버퍼 전환 (Double Buffer) 
+        Sleep(1);
     }
     
+    DestroyGame();      // 게임 제거 (메모리 해제)
+
     return 0;
 }
