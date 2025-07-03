@@ -15,8 +15,8 @@ using namespace std;
 //constexpr int WIN_WIDTH = 70;
 //constexpr int WIN_HEIGHT = 60;
 
-//constexpr int MAP_WIDTH = 12;
-//constexpr int MAP_HEIGHT = 22;
+constexpr int MAP_WIDTH = 12;
+constexpr int MAP_HEIGHT = 22;
 constexpr int BLOCK_WIDTH = 4;
 constexpr int BLOCK_HEIGHT = 4;
 //constexpr int START_POS_X = 4;
@@ -31,19 +31,6 @@ enum eKeyCode
     KEY_SPACE = 32,
     KEY_R = 114,
 };
-
-const int BLOCKS[][BLOCK_WIDTH * BLOCK_HEIGHT] =
-{
-    { 0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0 },	// I
-    { 0,0,0,0,0,0,2,0,0,0,2,0,0,2,2,0 },	// J
-    { 0,0,0,0,0,2,0,0,0,2,0,0,0,2,2,0 },	// L
-    { 0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,0 },	// O
-    { 0,0,0,0,0,2,0,0,0,2,2,0,0,0,2,0 },	// S
-    { 0,0,0,0,0,2,0,0,2,2,2,0,0,0,0,0 },	// T
-    { 0,0,0,0,0,0,2,0,0,2,2,0,0,2,0,0 },	// Z
-};
-
-int* g_pCurBlock = nullptr;
 
 struct stRect
 {
@@ -60,8 +47,56 @@ struct stConsole
 
     stConsole()
         : hConsole(nullptr), hBuffer{ nullptr, }, nCurBuffer(0)
-    { }
+    {
+    }
 };
+
+const int ORIGIN_MAP[MAP_HEIGHT][MAP_WIDTH] =
+{
+    {1,1,1,1,1,1,1,1,1,1,1,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,0,0,0,0,0,0,0,0,0,0,1,},
+    {1,1,1,1,1,1,1,1,1,1,1,1,},
+};
+
+const char BLOCK_TYPES[][4] =
+{
+    "  ",  // 빈 공간
+    "▣",  // 프레임
+    "□"    // 블록
+};
+
+const int BLOCKS[][BLOCK_WIDTH * BLOCK_HEIGHT] =
+{
+    { 0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0 },	// I
+    { 0,0,0,0,0,0,2,0,0,0,2,0,0,2,2,0 },	// J
+    { 0,0,0,0,0,2,0,0,0,2,0,0,0,2,2,0 },	// L
+    { 0,0,0,0,0,2,2,0,0,2,2,0,0,0,0,0 },	// O
+    { 0,0,0,0,0,2,0,0,0,2,2,0,0,0,2,0 },	// S
+    { 0,0,0,0,0,2,0,0,2,2,2,0,0,0,0,0 },	// T
+    { 0,0,0,0,0,0,2,0,0,2,2,0,0,2,0,0 },	// Z
+};
+
+int* g_pCurBlock = nullptr;
+int g_nArrMap[MAP_HEIGHT][MAP_WIDTH] = { 0, };
 
 stConsole g_console;
 
@@ -96,6 +131,12 @@ void InitGame(bool bInitConsole = true)
         SetConsoleWindowInfo(g_console.hConsole, TRUE, &consoleInfo.srWindow);  
         SetConsoleCursorInfo(g_console.hConsole, &consoleCursor);          
     }
+
+    {
+        // 맵 할당
+        int nMapSize = sizeof(int) * MAP_WIDTH * MAP_HEIGHT;
+        memcpy_s(g_nArrMap, nMapSize, ORIGIN_MAP, nMapSize);
+    }
 }
 
 void InputKey()
@@ -126,9 +167,25 @@ void InputKey()
     }
 }
 
+/**
+@brief        Function that puts blocks into a map to match the player's position.
+@param
+@return
+*/
 void CalcPlayer()
 {
-
+    COORD playerCursor = { 5, 3 };
+    
+    for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+    {
+        for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+        {
+            if (BLOCKS[1][nY * BLOCK_HEIGHT + nX])
+            {
+                g_nArrMap[playerCursor.Y + nY][playerCursor.X + nX] = BLOCKS[1][nY * BLOCK_HEIGHT + nX];
+            }
+        }
+    }
 }
 
 void CheckBottom()
@@ -136,9 +193,38 @@ void CheckBottom()
 
 }
 
-void Render(int a, int b)
+/**
+@brief		Rendering function
+@param		nXOffset	X Offset (그림을 그릴 때 왼쪽에서부터)
+@param		nYOffset	Y Offset (그림을 그릴 때 위쪽에서부터)
+@return
+*/
+void Render(int nXOffset = 0, int nYOffset = 0)
 {
+    COORD coord = { 0, };
+    int nXAdd = 0;
+    DWORD dw = 0;
 
+    for (int nY = 0; nY < MAP_HEIGHT; ++nY)
+    {
+        nXAdd = 0;
+        for (int nX = 0; nX < MAP_WIDTH; ++nX)
+        {
+            coord.X = nXAdd + nXOffset;
+            coord.Y = nY + nYOffset;
+
+            SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
+            WriteFile(g_console.hBuffer[g_console.nCurBuffer], BLOCK_TYPES[g_nArrMap[nY][nX]], sizeof(BLOCK_TYPES[g_nArrMap[nY][nX]]), &dw, NULL);
+
+            nXAdd += 1;
+
+            // 폰트: 굴림체일 경우
+            /*if (g_nArrMap[nY][nX] == 0)
+            {
+                nXAdd += 1;
+            }*/
+        }
+    }
 }
 
 void ClearScreen()
@@ -177,46 +263,13 @@ int main()
 {
     InitGame();         // 게임 초기화 (게임 설정 및 콘솔 설정)
 
-    /*char chBuf[256] = { 0, };
-    COORD coord{ 0,0 };
-    DWORD dw = 0;*/
-
-    int nCurBlock[BLOCK_WIDTH * BLOCK_HEIGHT] = { 0, };
-    int nMemSize = sizeof(int) * BLOCK_HEIGHT * BLOCK_WIDTH;
-    memcpy_s(nCurBlock, nMemSize, BLOCKS[1], nMemSize);
-
-    printf("");
-
-    for (int nRot = 0; nRot < 1; ++nRot)
-    {
-        int nTemps[BLOCK_WIDTH * BLOCK_HEIGHT] = { 0, };
-
-        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
-        {
-            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
-            {
-                nTemps[(nX * BLOCK_WIDTH) + (BLOCK_HEIGHT - nY - 1)] = nCurBlock[(nY * BLOCK_HEIGHT) + nX];
-            }
-        }
-
-        memcpy_s(nCurBlock, nMemSize, nTemps, nMemSize);
-    }
-
-    printf("");
-
     while (true)
-    {
-        // Flickering Test 출력
-        /*memset(chBuf, 0, sizeof(chBuf));
-        int nLen = sprintf_s(chBuf, sizeof(chBuf), "Flickering Test");
-        SetConsoleCursorPosition(g_console.hBuffer[g_console.nCurBuffer], coord);
-        WriteFile(g_console.hBuffer[g_console.nCurBuffer], chBuf, nLen, &dw, NULL);*/
-
-        InputKey();     // 키 입력
-        //CalcPlayer();   // 플레이어(도형)의 위치 계산
+    {       
+        //InputKey();     // 키 입력
+        CalcPlayer();   // 플레이어(도형)의 위치 계산
 
         //CheckBottom();  // 플레이어가 바닥 또는 도형에 닿았는지 확인
-        //Render(3, 1);       // 플레이어 및 도형 그리기
+        Render(3, 1);       // 플레이어 및 도형 그리기
 
         ClearScreen();  // 화면 클리어
         BufferFlip();   // 화면 버퍼 전환 (Double Buffer) 
