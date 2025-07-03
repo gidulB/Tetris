@@ -124,6 +124,8 @@ void InitGame(bool bInitConsole = true)
         g_player.SetDirection(CPlayer::eDirection::Dir0);
         g_player.SetGameScore(0);
         g_player.SetGameOver(false);
+
+        g_prevPlayerData = g_player;
     }
     
     // Initialize Console Data
@@ -335,6 +337,29 @@ void CalcPlayer()
 {
     // 현재 플레이어(블럭) 위치를 받아온다.
     COORD playerCursor = g_player.GetCursor();
+
+    // 이전 위치의 블럭 코드 제거
+    if (g_prevPlayerData != g_player)
+    {
+        int* pBlock = GetRotateBlock(g_prevPlayerData.GetBlock(), g_prevPlayerData.GetDirection());
+        COORD sprevCursor = g_prevPlayerData.GetCursor();
+
+        for (int nY = 0; nY < BLOCK_HEIGHT; ++nY)
+        {
+            for (int nX = 0; nX < BLOCK_WIDTH; ++nX)
+            {
+                // 이전 위치의 블럭이 위치한 좌표의 데이터를 지워줌
+                if (pBlock[(nY * BLOCK_HEIGHT) + nX] &&
+                    pBlock[(nY * BLOCK_HEIGHT) + nX] == g_nArrMap[sprevCursor.Y + nY][sprevCursor.X + nX])
+                {
+                    g_nArrMap[sprevCursor.Y + nY][sprevCursor.X + nX] = 0;
+                }
+            }
+        }
+
+        // 현재 플레이어(블럭)의 정보를 이전 정보에 기록
+        g_prevPlayerData = g_player;
+    }
 
     // 현재 블럭의 방향에 따른 모양을 받아온다.
     int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
