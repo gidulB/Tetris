@@ -2,6 +2,7 @@
 #include <Windows.h>
 #include <conio.h>
 #include <random> 
+#include <ctime> 
 #include "Player.h"
 
 using namespace std;
@@ -52,9 +53,12 @@ struct stConsole
     uniform_int_distribution<int> rdBlockDist;
     uniform_int_distribution<int> rdDirDist;
 
+    clock_t timeStart; // 마지막 입력지점의 시간
+
     stConsole()
         : hConsole(nullptr), hBuffer{ nullptr, }, nCurBuffer(0)
         , rdGen(rdDevice()), rdBlockDist(0, 6), rdDirDist(CPlayer::eDirection::Dir0, CPlayer::eDirection::Dir270)
+        , timeStart(clock())
     {
     }
 };
@@ -259,6 +263,13 @@ bool IsMoveAvailable(int nXAdder, int nYAdder)
     return !IsCollision(pBlock, coorNext);
 }
 
+bool IsRotateAvailable()
+{
+    int* pBlock = GetRotateBlock(g_player.GetBlock(), g_player.GetDirection());
+
+    return !IsCollision(pBlock, g_player.GetCursor());
+}
+
 void InputKey()
 {
     int nKey = 0;
@@ -275,9 +286,12 @@ void InputKey()
         }
         case eKeyCode::KEY_DOWN:
         {
-            if(IsMoveAvailable(0, 1))
+            if (IsMoveAvailable(0, 1))
+            {
                 g_player.AddPosition(0, 1);
-            break;
+                g_console.timeStart = clock();
+                break;
+            }
         }
         case eKeyCode::KEY_LEFT:
         {
@@ -293,6 +307,10 @@ void InputKey()
         }
         case eKeyCode::KEY_SPACE:
         {
+            if (IsRotateAvailable)
+            {
+                g_player.SetNextDirection();
+            }
             break;
         }
         case eKeyCode::KEY_R:
@@ -307,7 +325,21 @@ void InputKey()
 
 void CheckBottom()
 {
-    if (IsMoveAvailable(0, 1)) return;
+    // 마지막 입력 시간에서 현재 시간을 뺌 = 진행된 시간(ms)
+    clock_t ctTimeDiff = clock() - g_console.timeStart;
+
+    // 1000ms가 지나지 않았다면 바로 return
+    if (ctTimeDiff < 1000) return;
+
+    // 1000ms 가 지났으니 현재 시간을 다시 저장
+    g_console.timeStart = clock();
+
+    if (IsMoveAvailable(0, 1))
+    {
+        // 아래로 한 칸 이동
+        g_player.AddPosition(0, 1);
+        return;
+    }
 
     memcpy_s(g_nArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, g_nArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
 
