@@ -495,6 +495,7 @@ bool CheckFillLine()
 	bool bFill = true;
 	int nSize = 0;
 	bool bLineCleared = false;
+	int nClearedLineCount = 0;
 
 	for (int nY = curPos.Y; nY < curPos.Y + 4; ++nY)
 	{
@@ -514,11 +515,11 @@ bool CheckFillLine()
 		{
 			nSize = sizeof(int) * MAP_WIDTH * (nY - 1);
 			memcpy_s(g_nArrMapBackup[2], nSize, g_nArrMapBackup[1], nSize);
-			bLineCleared = true;
+			++nClearedLineCount;
 		}
 	}
 
-	return bLineCleared;
+	return nClearedLineCount;
 }
 
 /**
@@ -548,9 +549,11 @@ void CheckBottom()
 	memcpy_s(g_nArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, g_nArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
 
 	// Check Fill Line
-	if (CheckFillLine())
+	int nClearedLine = CheckFillLine();
+
+	if (nClearedLine > 0)
 	{
-		g_player.AddGameScore(1);
+		g_player.AddGameScore(nClearedLine);
 		memcpy_s(g_nArrMap, sizeof(int) * MAP_WIDTH * MAP_HEIGHT, g_nArrMapBackup, sizeof(int) * MAP_WIDTH * MAP_HEIGHT);
 	}
 
